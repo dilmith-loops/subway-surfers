@@ -74,7 +74,7 @@
 
       function initApp(e) {
           var n, t, a;
-          n = e.meta, t = pathJoin(n.path, n.splash), (a = document.querySelector("#og-game-holder")).style.backgroundColor = n.color, a.style.backgroundImage = 'url("' + t + '?v=1gefx1jwdk0gj12hb"")', loadFont("assets/font/lilita-one.css", "Lilita One"), loadFont("assets/font/titan-one.css", "Titan One"), window.sharedAppData.config.leaderboards && loadScript("js/leaderboard.js"), window.sharedAppData.config.vconsole && loadScript("https://cdnjs.cloudflare.com/ajax/libs/vConsole/3.3.0/vconsole.min.js"), loadScript("js/inflate.min.js"), loadScript("js/vendor.js"), loadScript("js/main.js")
+          n = e.meta, t = pathJoin(n.path, n.splash), (a = document.querySelector("#og-game-holder")).style.backgroundColor = n.color, a.style.backgroundImage = 'url("' + t + '?v=1gefx1jwdk0gj12hb")', a.style.backgroundSize = "cover", a.style.backgroundPosition = "center", loadFont("assets/font/lilita-one.css", "Lilita One"), loadFont("assets/font/titan-one.css", "Titan One"), window.sharedAppData.config.leaderboards && loadScript("js/leaderboard.js"), window.sharedAppData.config.vconsole && loadScript("https://cdnjs.cloudflare.com/ajax/libs/vConsole/3.3.0/vconsole.min.js"), loadScript("js/inflate.min.js"), loadScript("js/vendor.js"), loadScript("js/main.js")
       }
       window.GAME_CONFIG || (window.GAME_CONFIG = {
           fastplay: !1
@@ -97,8 +97,8 @@
               bundle: {
                   meta: {
                       path: "./",
-                      color: "#ffa4cd",
-                      splash: "assets/preload/splash_mip.png"
+                      color: "#0b1a2d",
+                      splash: "assets/preload/colombo_map.jpg"
                   }
               }
           }, e = t.pokiSdkDebug, n = function(e) {

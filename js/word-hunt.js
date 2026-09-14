@@ -5,17 +5,17 @@
 class WordHuntManager {
   constructor() {
     this.wordBank = [
+      "COLOMBO",
+      "CEYLON",
       "SUBWAY",
       "SURFER",
-      "SKATE",
+      "PETTAH",
       "TRAIN",
       "METRO",
       "RUNNER",
       "JAKE",
       "BOOST",
       "COINS",
-      "DODGE",
-      "HOVER",
       "SPEED"
     ];
     this.currentWordIndex = 0;
