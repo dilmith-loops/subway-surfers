@@ -48,8 +48,8 @@
   <!-- Google MediaPipe Face Detection AI for Zero-Lag Motion Tracking -->
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
 
-  <!-- Official Subway Surfers Adapter -->
-  <script src="js/games_lib/ludiAdapter.js" charset="utf-8"></script>
+  <!-- Three.js 3D Engine for Colombo City Runner -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
@@ -76,7 +76,24 @@
         </div>
         <!-- Letter Blank Slots -->
         <div id="word-hunt-slots" class="word-hunt-slots"></div>
-        <div id="word-hunt-status" class="word-hunt-status">Collect letters in the train station!</div>
+        <div id="word-hunt-status" class="word-hunt-status">Collect letters in Colombo city!</div>
+      </div>
+
+      <!-- Live Colombo Run Stats (Score & Coins) -->
+      <div class="stats-container">
+        <div class="stat-pill">
+          <span class="stat-icon">🏆</span>
+          <span id="hud-score" class="stat-value" style="font-size: 20px; font-weight: 900; color: #ffcc00;">0</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <div class="stat-pill" style="padding: 4px 12px;">
+            <span class="stat-icon">🪙</span>
+            <span id="hud-coins" class="stat-value" style="font-size: 15px; font-weight: 800; color: #ffd700;">0</span>
+          </div>
+          <div class="stat-pill" style="padding: 4px 12px;">
+            <span id="hud-multiplier" class="stat-value" style="font-size: 15px; font-weight: 900; color: #00ffcc;">1X</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -103,22 +120,50 @@
     </div>
   </div>
 
+  <!-- Game Over Modal Card -->
+  <div id="game-over-menu" class="hidden" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(10, 15, 30, 0.85); z-index: 100; backdrop-filter: blur(10px);">
+    <div style="background: rgba(20, 25, 45, 0.95); border: 2px solid #ff007f; border-radius: 24px; padding: 32px 40px; text-align: center; box-shadow: 0 10px 40px rgba(255, 0, 127, 0.4); max-width: 400px; width: 90%;">
+      <div style="font-size: 13px; font-weight: 800; color: #00ffcc; letter-spacing: 2px; text-transform: uppercase;">Colombo City Runner</div>
+      <h1 style="font-family: var(--font-display); font-size: 36px; color: #ff007f; margin: 8px 0 16px;">GAME OVER</h1>
+      <div style="background: rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 16px; margin-bottom: 24px;">
+        <div style="font-size: 12px; color: #aaa;">DISTANCE SCORE</div>
+        <div id="final-score" style="font-size: 34px; font-weight: 900; color: #ffcc00;">0</div>
+        <div style="display: flex; justify-content: space-around; margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px;">
+          <div>
+            <div style="font-size: 11px; color: #888;">COINS</div>
+            <div id="final-coins" style="font-size: 18px; font-weight: 800; color: #ffd700;">0</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #888;">HIGH SCORE</div>
+            <div id="final-highscore" style="font-size: 18px; font-weight: 800; color: #00ffcc;">0</div>
+          </div>
+        </div>
+      </div>
+      <button id="btn-restart-game" style="font-family: var(--font-display); font-size: 18px; padding: 14px 28px; border-radius: 50px; background: linear-gradient(135deg, #00ffcc, #00bbff); color: #002233; border: none; cursor: pointer; box-shadow: 0 6px 20px rgba(0, 255, 204, 0.5); font-weight: 900; letter-spacing: 1px; width: 100%;">🏃 RUN AGAIN IN COLOMBO</button>
+    </div>
+  </div>
+
   <!-- Audio & Tracking Modules -->
   <script src="js/audio.js"></script>
   <script src="js/word-hunt.js"></script>
   <script src="js/camera-tracker.js"></script>
 
-  <!-- Official Subway Surfers Game Engine Bootstrapper -->
-  <script src="js/boot.js"></script>
+  <!-- Subway Surfers 3D Colombo City Engine -->
+  <script src="js/game.js"></script>
 
   <script>
-    // --- Master Integration Controller ---
+    // --- Master Colombo Integration Controller ---
     window.addEventListener("DOMContentLoaded", () => {
-      // 1. Configure Default Relaxed Speed for Comfortable Motion Play
-      window.SUBWAY_CUSTOM_SPEED = 1.35; // 🐢 Relaxed Slow (default is 2.4 - 4.0)
-
-      // 2. Initialize Word Hunt
+      // 1. Initialize Word Hunt
       window.wordHunt.init("word-hunt-slots", "word-hunt-status");
+
+      // 2. Initialize and start 3D Colombo City Runner
+      if (window.subwayGame) {
+        window.subwayGame.init("og-game-holder");
+        window.subwayGame.setGameSpeed("relaxed");
+        window.subwayGame.start();
+        window.subwayController = window.subwayGame;
+      }
 
       // 3. UI Controls Setup
       const btnSoundToggle = document.getElementById("btn-sound-toggle");
@@ -127,39 +172,35 @@
       const btnQuickCalibrate = document.getElementById("btn-quick-calibrate");
       const btnPipCalibrate = document.getElementById("btn-pip-calibrate");
       const btnPipMode = document.getElementById("btn-pip-mode");
+      const btnRestart = document.getElementById("btn-restart-game");
 
       const pipWidget = document.getElementById("camera-pip-widget");
       const pipBadge = document.getElementById("pip-gesture-badge");
       const pipStatusTag = document.getElementById("pip-status-tag");
 
-      // Dispatch Key Helper for Subway Surfers
-      function sendGameKey(key, keyCode) {
-        const target = window;
-        target.dispatchEvent(new KeyboardEvent("keydown", { key, keyCode, which: keyCode, bubbles: true }));
-        setTimeout(() => {
-          target.dispatchEvent(new KeyboardEvent("keyup", { key, keyCode, which: keyCode, bubbles: true }));
-        }, 80);
+      if (btnRestart) {
+        btnRestart.addEventListener("click", () => {
+          if (window.subwayGame) window.subwayGame.start();
+        });
       }
 
-      // Connect AI Camera Tracker to Real Subway Surfers Controls
+      // Connect AI Camera Tracker to 3D Colombo Runner
       window.cameraTracker.onLaneChange = (lane) => {
-        if (lane === -1) {
-          if (window.subwayController) window.subwayController.pressLeft();
-          sendGameKey("ArrowLeft", 37);
-        } else if (lane === 1) {
-          if (window.subwayController) window.subwayController.pressRight();
-          sendGameKey("ArrowRight", 39);
+        if (window.subwayGame) {
+          window.subwayGame.setLane(lane);
         }
       };
 
       window.cameraTracker.onJump = () => {
-        if (window.subwayController) window.subwayController.pressUp();
-        sendGameKey("ArrowUp", 38);
+        if (window.subwayGame) {
+          window.subwayGame.jump();
+        }
       };
 
       window.cameraTracker.onDuck = () => {
-        if (window.subwayController) window.subwayController.pressDown();
-        sendGameKey("ArrowDown", 40);
+        if (window.subwayGame) {
+          window.subwayGame.slide();
+        }
       };
 
       // Camera Tracker status update listener
@@ -204,69 +245,61 @@
           window.cameraTracker.calibrateNow();
         }
       }
-      btnPipCalibrate.addEventListener("click", triggerCalibration);
+      if (btnPipCalibrate) btnPipCalibrate.addEventListener("click", triggerCalibration);
       if (btnQuickCalibrate) btnQuickCalibrate.addEventListener("click", triggerCalibration);
 
       // Sensitivity preset cycle
       const presets = ["normal", "high", "low"];
       let sensIndex = 0;
-      btnPipMode.addEventListener("click", () => {
-        sensIndex = (sensIndex + 1) % presets.length;
-        const current = presets[sensIndex];
-        window.cameraTracker.setSensitivity(current);
-        btnPipMode.textContent = `⚡ ${current.charAt(0).toUpperCase() + current.slice(1)}`;
-      });
+      if (btnPipMode) {
+        btnPipMode.addEventListener("click", () => {
+          sensIndex = (sensIndex + 1) % presets.length;
+          const current = presets[sensIndex];
+          window.cameraTracker.setSensitivity(current);
+          btnPipMode.textContent = `⚡ ${current.charAt(0).toUpperCase() + current.slice(1)}`;
+        });
+      }
 
       // Speed options cycle
       const speedOptions = [
-        { id: "relaxed", speed: 1.35, label: "🐢 Slow" },
-        { id: "normal", speed: 2.1, label: "🏃 Mid" },
-        { id: "fast", speed: 3.2, label: "⚡ Fast" }
+        { id: "relaxed", speed: 9.5, label: "🐢 Slow" },
+        { id: "normal", speed: 13.5, label: "🏃 Mid" },
+        { id: "fast", speed: 18.0, label: "⚡ Fast" }
       ];
       let speedOptionIdx = 0;
 
-      btnSpeedToggle.addEventListener("click", () => {
-        speedOptionIdx = (speedOptionIdx + 1) % speedOptions.length;
-        const opt = speedOptions[speedOptionIdx];
-        window.SUBWAY_CUSTOM_SPEED = opt.speed;
-        btnSpeedToggle.textContent = opt.label;
-      });
+      if (btnSpeedToggle) {
+        btnSpeedToggle.addEventListener("click", () => {
+          speedOptionIdx = (speedOptionIdx + 1) % speedOptions.length;
+          const opt = speedOptions[speedOptionIdx];
+          if (window.subwayGame) {
+            window.subwayGame.setGameSpeed(opt.id);
+          }
+          btnSpeedToggle.textContent = opt.label;
+        });
+      }
 
       // Camera toggle button
-      btnCameraToggle.addEventListener("click", () => {
-        if (pipWidget.style.display === "none") {
-          pipWidget.style.display = "block";
-          startCamera();
-        } else {
-          pipWidget.style.display = "none";
-        }
-      });
+      if (btnCameraToggle) {
+        btnCameraToggle.addEventListener("click", () => {
+          if (pipWidget.style.display === "none") {
+            pipWidget.style.display = "block";
+            startCamera();
+          } else {
+            pipWidget.style.display = "none";
+          }
+        });
+      }
 
       // Sound toggle
-      btnSoundToggle.addEventListener("click", () => {
-        if (window.soundEngine) {
-          const isMuted = window.soundEngine.toggleMute();
-          btnSoundToggle.textContent = isMuted ? "🔇" : "🔊";
-        }
-      });
-
-      // Coin collect integration: Every 4 coins collected in the real train station fills a Word Hunt letter!
-      let coinsCount = 0;
-      window.onSubwayCoinCollect = () => {
-        coinsCount++;
-        if (coinsCount % 3 === 0 && window.wordHunt) {
-          const letter = window.wordHunt.getNextSpawnLetter();
-          window.wordHunt.collectLetter(letter);
-        }
-      };
-
-      // Periodic Word Hunt letter discovery during run
-      setInterval(() => {
-        if (window.subwayController && window.wordHunt) {
-          const letter = window.wordHunt.getNextSpawnLetter();
-          window.wordHunt.collectLetter(letter);
-        }
-      }, 14000);
+      if (btnSoundToggle) {
+        btnSoundToggle.addEventListener("click", () => {
+          if (window.soundEngine) {
+            const isMuted = window.soundEngine.toggleMute();
+            btnSoundToggle.textContent = isMuted ? "🔇" : "🔊";
+          }
+        });
+      }
     });
   </script>
 </body>

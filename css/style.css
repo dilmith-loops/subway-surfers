@@ -75,7 +75,8 @@ html, body {
   padding: 16px 24px;
 }
 
-#game-hud.hidden {
+#game-hud.hidden,
+.hidden {
   display: none !important;
 }
 

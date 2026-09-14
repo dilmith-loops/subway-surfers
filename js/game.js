@@ -95,8 +95,8 @@ class SubwaySurfersGame {
     const height = this.container.clientHeight || window.innerHeight;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x130e26);
-    this.scene.fog = new THREE.FogExp2(0x130e26, 0.009);
+    this.scene.background = new THREE.Color(0x64b5f6);
+    this.scene.fog = new THREE.FogExp2(0x64b5f6, 0.005);
 
     this.camera = new THREE.PerspectiveCamera(65, width / height, 0.1, 300);
     this.camera.position.set(0, 5, 9);
@@ -158,34 +158,35 @@ class SubwaySurfersGame {
   }
 
   setupLighting() {
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(0xddeeff, 0.7);
+    // Tropical coastal ambient light
+    const ambientLight = new THREE.AmbientLight(0xe8f4f8, 0.85);
     this.scene.add(ambientLight);
 
-    // Main directional sunlight with shadows
-    const dirLight = new THREE.DirectionalLight(0xfff3d6, 1.3);
-    dirLight.position.set(15, 35, 20);
+    // Warm Sri Lankan tropical sunlight with sharp shadows
+    const dirLight = new THREE.DirectionalLight(0xfffae6, 1.4);
+    dirLight.position.set(25, 45, 20);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
     dirLight.shadow.camera.near = 5;
-    dirLight.shadow.camera.far = 120;
-    dirLight.shadow.camera.left = -25;
-    dirLight.shadow.camera.right = 25;
-    dirLight.shadow.camera.top = 40;
-    dirLight.shadow.camera.bottom = -20;
+    dirLight.shadow.camera.far = 140;
+    dirLight.shadow.camera.left = -30;
+    dirLight.shadow.camera.right = 35;
+    dirLight.shadow.camera.top = 45;
+    dirLight.shadow.camera.bottom = -25;
     dirLight.shadow.bias = -0.0005;
     this.scene.add(dirLight);
     this.sunLight = dirLight;
 
-    // Neon atmospheric rim light (Cyberpunk subway vibes)
-    const rimLight = new THREE.DirectionalLight(0x00d4ff, 0.6);
-    rimLight.position.set(-20, 10, -30);
-    this.scene.add(rimLight);
+    // Ocean surface bounce light (Indian Ocean turquoise reflection)
+    const oceanLight = new THREE.DirectionalLight(0x38bdf8, 0.45);
+    oceanLight.position.set(-25, 12, -20);
+    this.scene.add(oceanLight);
 
-    const pinkLight = new THREE.DirectionalLight(0xff0077, 0.4);
-    pinkLight.position.set(20, 8, -40);
-    this.scene.add(pinkLight);
+    // Subtle warm golden hour rim light from city
+    const cityLight = new THREE.DirectionalLight(0xfbbf24, 0.3);
+    cityLight.position.set(20, 10, -35);
+    this.scene.add(cityLight);
   }
 
   // --- Build Jake Character ---
@@ -323,69 +324,391 @@ class SubwaySurfersGame {
     this.scene.add(this.playerGroup);
   }
 
-  // --- Environment & Track Setup ---
+  // --- Environment & Track Setup: Colombo City & Indian Ocean Coastal Railway ---
   buildEnvironment() {
-    // Generate initial track segments
+    // 1. Distant Colombo Map Panorama Backdrop
+    this.createPanoramaBackdrop();
+
+    // 2. 3D Colombo Lotus Tower in the skyline
+    this.createLotusTower(32, 0, -140);
+
+    // 3. Generate initial track segments
     for (let i = 0; i < this.visibleSegments; i++) {
       const zPos = -i * this.trackLength;
       this.createTrackSegment(zPos);
     }
   }
 
+  createPanoramaBackdrop() {
+    const textureLoader = new THREE.TextureLoader();
+    const mapTexture = textureLoader.load('assets/preload/colombo_map.jpg');
+    mapTexture.wrapS = THREE.ClampToEdgeWrapping;
+    mapTexture.wrapT = THREE.ClampToEdgeWrapping;
+
+    // Curved panoramic backdrop in the far horizon
+    const panoramaGeo = new THREE.PlaneGeometry(360, 110);
+    const panoramaMat = new THREE.MeshBasicMaterial({
+      map: mapTexture,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    const panorama = new THREE.Mesh(panoramaGeo, panoramaMat);
+    panorama.position.set(0, 38, -195);
+    this.scene.add(panorama);
+    this.colomboPanorama = panorama;
+  }
+
+  createLotusTower(x = 32, y = 0, z = -140) {
+    const towerGroup = new THREE.Group();
+    towerGroup.position.set(x, y, z);
+
+    // 1. Stepped Circular Base Pavilion
+    const baseGeo = new THREE.CylinderGeometry(9, 12, 6, 24);
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0xede8d0, roughness: 0.7 });
+    const base = new THREE.Mesh(baseGeo, baseMat);
+    base.position.y = 3;
+    towerGroup.add(base);
+
+    // 2. Tower Stem (Slender tapering column in soft lotus green/teal)
+    const stemGeo = new THREE.CylinderGeometry(2.4, 4.5, 62, 20);
+    const stemMat = new THREE.MeshStandardMaterial({
+      color: 0x3d8b7a,
+      roughness: 0.4,
+      metalness: 0.25
+    });
+    const stem = new THREE.Mesh(stemGeo, stemMat);
+    stem.position.y = 37;
+    towerGroup.add(stem);
+
+    // 3. Iconic Lotus Petal Bulb (Multi-tier magenta flower bulb)
+    const bulbGroup = new THREE.Group();
+    bulbGroup.position.y = 70;
+
+    const bulbMat = new THREE.MeshStandardMaterial({
+      color: 0xff007f, // Glowing Lotus Pink / Magenta
+      emissive: 0x660033,
+      roughness: 0.35,
+      metalness: 0.2
+    });
+
+    // Lower petals flare
+    const lowerBulbGeo = new THREE.CylinderGeometry(8.5, 3.5, 7, 18);
+    const lowerBulb = new THREE.Mesh(lowerBulbGeo, bulbMat);
+    bulbGroup.add(lowerBulb);
+
+    // Main bulb mid sphere / tiered petals
+    const midBulbGeo = new THREE.SphereGeometry(8.8, 24, 18);
+    midBulbGeo.scale(1, 0.88, 1);
+    const midBulb = new THREE.Mesh(midBulbGeo, bulbMat);
+    midBulb.position.y = 4.5;
+    bulbGroup.add(midBulb);
+
+    // Golden observation deck ring
+    const deckGeo = new THREE.CylinderGeometry(9.2, 9.2, 1.4, 24);
+    const deckMat = new THREE.MeshStandardMaterial({
+      color: 0xffd700,
+      emissive: 0x443300,
+      metalness: 0.7,
+      roughness: 0.2
+    });
+    const deck = new THREE.Mesh(deckGeo, deckMat);
+    deck.position.y = 4.5;
+    bulbGroup.add(deck);
+
+    // Top petal crown
+    const topPetalsGeo = new THREE.ConeGeometry(7.2, 8, 18);
+    const topPetals = new THREE.Mesh(topPetalsGeo, bulbMat);
+    topPetals.position.y = 11;
+    bulbGroup.add(topPetals);
+
+    towerGroup.add(bulbGroup);
+
+    // 4. Telecommunication Spire & Antenna Mast
+    const spireGeo = new THREE.CylinderGeometry(0.35, 1.4, 32, 12);
+    const spireMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.85, roughness: 0.15 });
+    const spire = new THREE.Mesh(spireGeo, spireMat);
+    spire.position.y = 100;
+    towerGroup.add(spire);
+
+    // Flashing red aircraft warning beacon at peak
+    const beaconGeo = new THREE.SphereGeometry(0.6, 8, 8);
+    const beaconMat = new THREE.MeshBasicMaterial({ color: 0xff1133 });
+    const beacon = new THREE.Mesh(beaconGeo, beaconMat);
+    beacon.position.y = 116;
+    towerGroup.add(beacon);
+
+    this.scene.add(towerGroup);
+    this.lotusTower = towerGroup;
+  }
+
+  createPalmTree(x, z, scale = 1.0) {
+    const palmGroup = new THREE.Group();
+    palmGroup.position.set(x, 0, z);
+    palmGroup.scale.set(scale, scale, scale);
+
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6e4e37, roughness: 0.85 });
+    const trunkSegments = 5;
+    let currY = 0;
+    let currX = 0;
+    const curveDir = x < 0 ? -0.22 : 0.22; // Lean toward ocean or promenade
+
+    for (let i = 0; i < trunkSegments; i++) {
+      const segH = 1.4;
+      const rTop = 0.35 - i * 0.03;
+      const rBot = 0.42 - i * 0.03;
+      const segGeo = new THREE.CylinderGeometry(rTop, rBot, segH, 8);
+      const seg = new THREE.Mesh(segGeo, trunkMat);
+      currX += curveDir * (i * 0.3);
+      seg.position.set(currX, currY + segH / 2, 0);
+      seg.rotation.z = -curveDir * 0.18;
+      palmGroup.add(seg);
+      currY += segH;
+    }
+
+    // Coconuts
+    const nutMat = new THREE.MeshStandardMaterial({ color: 0x4a2e18, roughness: 0.8 });
+    for (let n = 0; n < 4; n++) {
+      const nutGeo = new THREE.SphereGeometry(0.24, 8, 8);
+      const nut = new THREE.Mesh(nutGeo, nutMat);
+      const ang = (n / 4) * Math.PI * 2;
+      nut.position.set(currX + Math.cos(ang) * 0.35, currY - 0.15, Math.sin(ang) * 0.35);
+      palmGroup.add(nut);
+    }
+
+    // Lush Palm Fronds (Leaves)
+    const frondMat = new THREE.MeshStandardMaterial({
+      color: 0x2d6a4f,
+      roughness: 0.55,
+      side: THREE.DoubleSide
+    });
+
+    const frondCount = 7;
+    for (let f = 0; f < frondCount; f++) {
+      const angle = (f / frondCount) * Math.PI * 2;
+      const frondGeo = new THREE.ConeGeometry(0.65, 3.6, 4);
+      frondGeo.scale(1, 1, 0.15);
+      const frond = new THREE.Mesh(frondGeo, frondMat);
+      frond.position.set(currX, currY + 0.15, 0);
+      frond.rotation.y = angle;
+      frond.rotation.x = Math.PI / 2.7;
+      palmGroup.add(frond);
+    }
+
+    return palmGroup;
+  }
+
+  createCityBuilding(x, z, width, depth, height, color) {
+    const bGroup = new THREE.Group();
+    bGroup.position.set(x, 0, z);
+
+    // Building structure
+    const bGeo = new THREE.BoxGeometry(width, height, depth);
+    const bMat = new THREE.MeshStandardMaterial({ color, roughness: 0.7 });
+    const building = new THREE.Mesh(bGeo, bMat);
+    building.position.y = height / 2;
+    building.castShadow = true;
+    building.receiveShadow = true;
+    bGroup.add(building);
+
+    // Warm glowing windows
+    const winMat = new THREE.MeshStandardMaterial({
+      color: 0xfff0aa,
+      emissive: 0x443311,
+      roughness: 0.2
+    });
+    const floors = Math.floor(height / 3.0);
+    const cols = Math.floor(depth / 2.6);
+
+    for (let fl = 1; fl < floors; fl++) {
+      for (let c = 0; c < cols; c++) {
+        if (Math.random() > 0.28) {
+          const winGeo = new THREE.PlaneGeometry(0.85, 1.3);
+          const win = new THREE.Mesh(winGeo, winMat);
+          win.position.set(
+            -width / 2 - 0.02,
+            fl * 3.0 + 0.2,
+            -depth / 2 + (c + 0.5) * 2.6
+          );
+          win.rotation.y = -Math.PI / 2;
+          bGroup.add(win);
+        }
+      }
+    }
+
+    // Parapet roof border
+    const roofGeo = new THREE.BoxGeometry(width + 0.4, 0.5, depth + 0.4);
+    const roofMat = new THREE.MeshStandardMaterial({ color: 0x374151 });
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.position.y = height + 0.25;
+    bGroup.add(roof);
+
+    return bGroup;
+  }
+
+  createHeritageArch() {
+    const archGroup = new THREE.Group();
+
+    // Red brick pillars (Colombo Fort Railway Station 1908 architecture)
+    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x93291e, roughness: 0.8 }); // Red brick
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0xfdf0d5, roughness: 0.5 }); // Cream stone
+    const signMat = new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.3 }); // Heritage green
+
+    const pillarGeo = new THREE.BoxGeometry(0.85, 7.2, 0.85);
+    const pillarL = new THREE.Mesh(pillarGeo, pillarMat);
+    pillarL.position.set(-6.8, 3.6, 0);
+    archGroup.add(pillarL);
+
+    const pillarR = new THREE.Mesh(pillarGeo, pillarMat);
+    pillarR.position.set(6.8, 3.6, 0);
+    archGroup.add(pillarR);
+
+    // Decorative Capitals
+    const capGeo = new THREE.BoxGeometry(1.15, 0.45, 1.15);
+    const capL = new THREE.Mesh(capGeo, trimMat);
+    capL.position.set(-6.8, 7.3, 0);
+    archGroup.add(capL);
+
+    const capR = new THREE.Mesh(capGeo, trimMat);
+    capR.position.set(6.8, 7.3, 0);
+    archGroup.add(capR);
+
+    // Overhead Red Brick Beam
+    const beamGeo = new THREE.BoxGeometry(15, 1.0, 0.9);
+    const beam = new THREE.Mesh(beamGeo, pillarMat);
+    beam.position.set(0, 7.5, 0);
+    archGroup.add(beam);
+
+    // Heritage Station Signboard ("COLOMBO FORT")
+    const signBoardGeo = new THREE.BoxGeometry(7.8, 1.25, 0.22);
+    const signBoard = new THREE.Mesh(signBoardGeo, signMat);
+    signBoard.position.set(0, 7.5, 0.48);
+    archGroup.add(signBoard);
+
+    // Station Clock
+    const clockRimGeo = new THREE.CylinderGeometry(0.75, 0.75, 0.25, 20);
+    const clockRimMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.2 });
+    const clockRim = new THREE.Mesh(clockRimGeo, clockRimMat);
+    clockRim.rotation.x = Math.PI / 2;
+    clockRim.position.set(0, 8.8, 0.2);
+    archGroup.add(clockRim);
+
+    const clockFaceGeo = new THREE.CircleGeometry(0.6, 20);
+    const clockFaceMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const clockFace = new THREE.Mesh(clockFaceGeo, clockFaceMat);
+    clockFace.position.set(0, 8.8, 0.34);
+    archGroup.add(clockFace);
+
+    return archGroup;
+  }
+
   createTrackSegment(zPos) {
     const segment = new THREE.Group();
     segment.position.z = zPos;
 
-    // Ground gravel ballast
+    // 1. Central Track Gravel Ballast
     const groundGeo = new THREE.PlaneGeometry(16, this.trackLength);
     const groundMat = new THREE.MeshStandardMaterial({
-      color: 0x242836,
-      roughness: 0.9,
-      metalness: 0.1
+      color: 0x4a4d56, // Ballast stone
+      roughness: 0.95,
+      metalness: 0.05
     });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     segment.add(ground);
 
-    // Concrete side walls / Graffiti barriers
-    const wallGeo = new THREE.BoxGeometry(1.2, 4.5, this.trackLength);
-    const wallMat = new THREE.MeshStandardMaterial({
-      color: 0x3d4354,
-      roughness: 0.7
+    // 2. LEFT SIDE: Indian Ocean Water Surface (Marine Drive Coastal Track!)
+    const oceanGeo = new THREE.PlaneGeometry(55, this.trackLength);
+    const oceanMat = new THREE.MeshStandardMaterial({
+      color: 0x0077b6, // Deep turquoise Indian Ocean
+      roughness: 0.08,
+      metalness: 0.25
     });
+    const ocean = new THREE.Mesh(oceanGeo, oceanMat);
+    ocean.rotation.x = -Math.PI / 2;
+    ocean.position.set(-35.5, -0.3, 0);
+    segment.add(ocean);
 
-    const leftWall = new THREE.Mesh(wallGeo, wallMat);
-    leftWall.position.set(-7.5, 2.25, 0);
-    leftWall.receiveShadow = true;
-    segment.add(leftWall);
+    // Golden sand shore strip along water
+    const sandGeo = new THREE.PlaneGeometry(2.4, this.trackLength);
+    const sandMat = new THREE.MeshStandardMaterial({ color: 0xeddcd2, roughness: 0.9 });
+    const sand = new THREE.Mesh(sandGeo, sandMat);
+    sand.rotation.x = -Math.PI / 2;
+    sand.position.set(-8.8, 0.01, 0);
+    segment.add(sand);
 
+    // Coastal granite seawall / riprap boulders
+    const seawallGeo = new THREE.BoxGeometry(0.8, 1.2, this.trackLength);
+    const seawallMat = new THREE.MeshStandardMaterial({ color: 0x4b5563, roughness: 0.8 });
+    const seawall = new THREE.Mesh(seawallGeo, seawallMat);
+    seawall.position.set(-7.5, 0.6, 0);
+    seawall.receiveShadow = true;
+    segment.add(seawall);
+
+    // Palm trees along coastal seawall
+    segment.add(this.createPalmTree(-10.5, -16, 1.05));
+    segment.add(this.createPalmTree(-11.2, 14, 0.95));
+
+    // 3. RIGHT SIDE: Colombo City Promenade & Skyline
+    const promGeo = new THREE.PlaneGeometry(24, this.trackLength);
+    const promMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.7 });
+    const promenade = new THREE.Mesh(promGeo, promMat);
+    promenade.rotation.x = -Math.PI / 2;
+    promenade.position.set(19.5, 0.04, 0);
+    promenade.receiveShadow = true;
+    segment.add(promenade);
+
+    // Parapet barrier wall with Sri Lankan Street Art
+    const wallGeo = new THREE.BoxGeometry(0.9, 2.4, this.trackLength);
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 });
     const rightWall = new THREE.Mesh(wallGeo, wallMat);
-    rightWall.position.set(7.5, 2.25, 0);
+    rightWall.position.set(7.5, 1.2, 0);
     rightWall.receiveShadow = true;
     segment.add(rightWall);
 
-    // Graffiti neon decals along walls
-    const graffitiColors = [0xff0066, 0x00ffcc, 0xffcc00, 0x9900ff];
+    // Graffiti street art decals along wall
+    const graffitiColors = [0xff007f, 0x00ffcc, 0xffcc00, 0xff5500];
     for (let g = 0; g < 3; g++) {
       const gColor = graffitiColors[(Math.floor(Math.random() * graffitiColors.length))];
-      const gGeo = new THREE.PlaneGeometry(3.5, 1.8);
-      const gMat = new THREE.MeshBasicMaterial({
-        color: gColor,
-        side: THREE.DoubleSide
-      });
+      const gGeo = new THREE.PlaneGeometry(3.6, 1.6);
+      const gMat = new THREE.MeshBasicMaterial({ color: gColor, side: THREE.DoubleSide });
       const gMesh = new THREE.Mesh(gGeo, gMat);
-      const isLeft = Math.random() > 0.5;
-      gMesh.position.set(isLeft ? -6.85 : 6.85, 2.2 + (Math.random() * 0.8), (g - 1) * 18);
-      gMesh.rotation.y = isLeft ? Math.PI / 2 : -Math.PI / 2;
+      gMesh.position.set(7.02, 1.2 + (Math.random() * 0.4), (g - 1) * 18);
+      gMesh.rotation.y = -Math.PI / 2;
       segment.add(gMesh);
     }
 
-    // 3 Tracks (Rails + Wooden Sleepers)
+    // Colombo Promenade Street Lamps
+    const lampPoleGeo = new THREE.CylinderGeometry(0.08, 0.12, 4.5, 8);
+    const lampPoleMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.8 });
+    const lampOrbGeo = new THREE.SphereGeometry(0.3, 10, 10);
+    const lampOrbMat = new THREE.MeshBasicMaterial({ color: 0xfff0b3 });
+
+    [-18, 18].forEach(lampZ => {
+      const pole = new THREE.Mesh(lampPoleGeo, lampPoleMat);
+      pole.position.set(9.2, 2.25, lampZ);
+      segment.add(pole);
+
+      const orb = new THREE.Mesh(lampOrbGeo, lampOrbMat);
+      orb.position.set(9.2, 4.6, lampZ);
+      segment.add(orb);
+    });
+
+    // Colombo City Buildings (Colonial & Modern tropical colors)
+    const buildingColors = [0xc85a32, 0xf4a261, 0x2a9d8f, 0x3a86ff, 0xe76f51, 0x457b9d];
+    const bColor1 = buildingColors[Math.floor(Math.random() * buildingColors.length)];
+    const bColor2 = buildingColors[Math.floor(Math.random() * buildingColors.length)];
+    const bHeight1 = 12 + Math.random() * 14;
+    const bHeight2 = 14 + Math.random() * 18;
+
+    segment.add(this.createCityBuilding(17, -15, 10, 22, bHeight1, bColor1));
+    segment.add(this.createCityBuilding(19, 15, 12, 24, bHeight2, bColor2));
+
+    // 4. 3 Tracks (Steel Rails + Wooden Sleepers)
     const railMat = new THREE.MeshStandardMaterial({
-      color: 0x99aab5,
+      color: 0x94a3b8,
       metalness: 0.95,
-      roughness: 0.2
+      roughness: 0.15
     });
     const sleeperMat = new THREE.MeshStandardMaterial({
       color: 0x4a3728,
@@ -393,7 +716,6 @@ class SubwaySurfersGame {
     });
 
     [-this.laneWidth, 0, this.laneWidth].forEach((laneX) => {
-      // 2 Steel Rails
       const railGeo = new THREE.BoxGeometry(0.12, 0.15, this.trackLength);
       const leftRail = new THREE.Mesh(railGeo, railMat);
       leftRail.position.set(laneX - 0.7, 0.08, 0);
@@ -405,7 +727,7 @@ class SubwaySurfersGame {
       rightRail.receiveShadow = true;
       segment.add(rightRail);
 
-      // Wooden Sleepers along track (every 2 units)
+      // Wooden Sleepers along track
       const sleeperGeo = new THREE.BoxGeometry(1.8, 0.1, 0.4);
       for (let s = -this.trackLength / 2; s < this.trackLength / 2; s += 2.2) {
         const sleeper = new THREE.Mesh(sleeperGeo, sleeperMat);
@@ -415,29 +737,8 @@ class SubwaySurfersGame {
       }
     });
 
-    // Overhead Cable Gantries (Subway Arch)
-    const archGeo = new THREE.BoxGeometry(15, 0.4, 0.4);
-    const pillarGeo = new THREE.BoxGeometry(0.4, 6.5, 0.4);
-    const metalMat = new THREE.MeshStandardMaterial({ color: 0x22222a });
-
-    const archPillarL = new THREE.Mesh(pillarGeo, metalMat);
-    archPillarL.position.set(-6.8, 3.25, 0);
-    segment.add(archPillarL);
-
-    const archPillarR = new THREE.Mesh(pillarGeo, metalMat);
-    archPillarR.position.set(6.8, 3.25, 0);
-    segment.add(archPillarR);
-
-    const archBeam = new THREE.Mesh(archGeo, metalMat);
-    archBeam.position.set(0, 6.5, 0);
-    segment.add(archBeam);
-
-    // Neon signal light on the gantry
-    const lightGlowGeo = new THREE.SphereGeometry(0.2, 8, 8);
-    const lightGlowMat = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
-    const signalLight = new THREE.Mesh(lightGlowGeo, lightGlowMat);
-    signalLight.position.set(0, 6.1, 0);
-    segment.add(signalLight);
+    // 5. Overhead Colombo Fort Station Heritage Arch
+    segment.add(this.createHeritageArch());
 
     this.scene.add(segment);
     this.trackSegments.push(segment);
@@ -497,54 +798,107 @@ class SubwaySurfersGame {
     const trainW = 2.8;
     const trainH = 3.6;
 
-    // Train Body
+    // Sri Lanka Railways Class S12 Royal Blue livery
     const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0xcc2222, // Subway Red
-      roughness: 0.4,
-      metalness: 0.3
+      color: 0x0a3d62, // Sri Lanka Railways Royal Blue
+      roughness: 0.35,
+      metalness: 0.25
     });
     const roofMat = new THREE.MeshStandardMaterial({
-      color: 0xdde2e8, // Metallic Roof
-      roughness: 0.3,
-      metalness: 0.7
+      color: 0xadb5bd, // Silver metal roof
+      roughness: 0.4,
+      metalness: 0.6
+    });
+    const yellowStripeMat = new THREE.MeshStandardMaterial({
+      color: 0xffcc00, // Vibrant Railway Yellow warning stripe
+      roughness: 0.3
+    });
+    const redSkirtMat = new THREE.MeshStandardMaterial({
+      color: 0x9e2a2b, // Red buffer skirt
+      roughness: 0.5
     });
 
-    const bodyGeo = new THREE.BoxGeometry(trainW, trainH, trainLen);
+    // 1. Train Body
+    const bodyGeo = new THREE.BoxGeometry(trainW, trainH - 0.4, trainLen);
     const body = new THREE.Mesh(bodyGeo, bodyMat);
     body.position.y = trainH / 2;
     body.castShadow = true;
     body.receiveShadow = true;
     trainGroup.add(body);
 
-    // Train Roof (flat surface you can run on!)
-    const roofGeo = new THREE.BoxGeometry(trainW + 0.1, 0.25, trainLen + 0.1);
+    // 2. Yellow warning band across middle
+    const stripeGeo = new THREE.BoxGeometry(trainW + 0.04, 0.45, trainLen + 0.04);
+    const stripe = new THREE.Mesh(stripeGeo, yellowStripeMat);
+    stripe.position.y = 1.6;
+    trainGroup.add(stripe);
+
+    // 3. Red bottom buffer skirt
+    const skirtGeo = new THREE.BoxGeometry(trainW + 0.02, 0.35, trainLen + 0.02);
+    const skirt = new THREE.Mesh(skirtGeo, redSkirtMat);
+    skirt.position.y = 0.18;
+    trainGroup.add(skirt);
+
+    // 4. Corrugated Train Roof
+    const roofGeo = new THREE.BoxGeometry(trainW + 0.15, 0.3, trainLen + 0.1);
     const roof = new THREE.Mesh(roofGeo, roofMat);
     roof.position.y = trainH + 0.12;
     roof.receiveShadow = true;
     trainGroup.add(roof);
 
-    // Front Windshield & Headlights
-    const glassMat = new THREE.MeshStandardMaterial({ color: 0x112233, roughness: 0.1 });
-    const glassGeo = new THREE.BoxGeometry(trainW * 0.7, 1.0, 0.2);
+    // 5. Front Windshield & Headlights
+    const glassMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1 });
+    const glassGeo = new THREE.BoxGeometry(trainW * 0.72, 1.0, 0.2);
     const glass = new THREE.Mesh(glassGeo, glassMat);
     glass.position.set(0, trainH * 0.65, trainLen / 2 + 0.05);
     trainGroup.add(glass);
 
-    // Glowing Yellow Headlights
-    const lightGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.1, 12);
+    // Front Sri Lanka Railways destination plate ("COLOMBO FORT")
+    const plateGeo = new THREE.BoxGeometry(trainW * 0.55, 0.35, 0.22);
+    const plateMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+    const plate = new THREE.Mesh(plateGeo, plateMat);
+    plate.position.set(0, trainH * 0.88, trainLen / 2 + 0.06);
+    trainGroup.add(plate);
+
+    // Front yellow warning chevrons / stripes on nose
+    const noseStripeGeo = new THREE.BoxGeometry(trainW * 0.8, 0.35, 0.1);
+    const noseStripe = new THREE.Mesh(noseStripeGeo, yellowStripeMat);
+    noseStripe.position.set(0, 0.9, trainLen / 2 + 0.06);
+    trainGroup.add(noseStripe);
+
+    // Twin warm train headlights
+    const lightGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.12, 12);
     const lightMat = new THREE.MeshBasicMaterial({ color: 0xffea00 });
 
     const leftLight = new THREE.Mesh(lightGeo, lightMat);
     leftLight.rotation.x = Math.PI / 2;
-    leftLight.position.set(-0.9, 0.9, trainLen / 2 + 0.06);
+    leftLight.position.set(-0.9, 0.85, trainLen / 2 + 0.08);
     trainGroup.add(leftLight);
 
     const rightLight = new THREE.Mesh(lightGeo, lightMat);
     rightLight.rotation.x = Math.PI / 2;
-    rightLight.position.set(0.9, 0.9, trainLen / 2 + 0.06);
+    rightLight.position.set(0.9, 0.85, trainLen / 2 + 0.08);
     trainGroup.add(rightLight);
 
-    // Optional Climbable Ramp at the front
+    // Passenger Windows along sides
+    const sideWinGeo = new THREE.PlaneGeometry(0.9, 0.7);
+    const sideWinMat = new THREE.MeshStandardMaterial({
+      color: 0xffe899,
+      emissive: 0x443311,
+      roughness: 0.2
+    });
+    for (let wz = -trainLen / 2 + 2.5; wz < trainLen / 2 - 2; wz += 2.2) {
+      const winL = new THREE.Mesh(sideWinGeo, sideWinMat);
+      winL.position.set(-trainW / 2 - 0.02, 2.3, wz);
+      winL.rotation.y = -Math.PI / 2;
+      trainGroup.add(winL);
+
+      const winR = new THREE.Mesh(sideWinGeo, sideWinMat);
+      winR.position.set(trainW / 2 + 0.02, 2.3, wz);
+      winR.rotation.y = Math.PI / 2;
+      trainGroup.add(winR);
+    }
+
+    // Optional Climbable Ramp at front
     if (hasRamp) {
       const rampGeo = new THREE.BoxGeometry(trainW, 0.25, 7.0);
       const ramp = new THREE.Mesh(rampGeo, roofMat);
@@ -1172,6 +1526,14 @@ class SubwaySurfersGame {
         this.scene.remove(col);
         this.collectibles.splice(i, 1);
       }
+    }
+
+    // Keep Lotus Tower and Colombo Panorama towering in the distant horizon ahead
+    if (this.colomboPanorama) {
+      this.colomboPanorama.position.z = this.playerZ - 195;
+    }
+    if (this.lotusTower) {
+      this.lotusTower.position.z = this.playerZ - 140;
     }
 
     // Gradually ramp up speed very gently
