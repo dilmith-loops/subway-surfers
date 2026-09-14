@@ -341,19 +341,19 @@ class SubwaySurfersGame {
 
   createPanoramaBackdrop() {
     const textureLoader = new THREE.TextureLoader();
-    const mapTexture = textureLoader.load('assets/preload/colombo_map.jpg');
+    const mapTexture = textureLoader.load('assets/preload/colombo_street_view.jpg');
     mapTexture.wrapS = THREE.ClampToEdgeWrapping;
     mapTexture.wrapT = THREE.ClampToEdgeWrapping;
 
-    // Curved panoramic backdrop in the far horizon
-    const panoramaGeo = new THREE.PlaneGeometry(360, 110);
+    // Curved Google Street View panoramic backdrop in the far horizon
+    const panoramaGeo = new THREE.PlaneGeometry(390, 130);
     const panoramaMat = new THREE.MeshBasicMaterial({
       map: mapTexture,
       side: THREE.DoubleSide,
       depthWrite: false
     });
     const panorama = new THREE.Mesh(panoramaGeo, panoramaMat);
-    panorama.position.set(0, 38, -195);
+    panorama.position.set(0, 42, -195);
     this.scene.add(panorama);
     this.colomboPanorama = panorama;
   }
