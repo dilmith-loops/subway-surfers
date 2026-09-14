@@ -1,0 +1,18 @@
+{
+  "name": "subway-surfers",
+  "version": "1.0.0",
+  "description": "Subway Surfers - Real Train Station & Camera Motion Edition",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js --open",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "subway-surfers",
+    "game",
+    "motion-tracking",
+    "webcam"
+  ],
+  "author": "",
+  "license": "MIT"
+}

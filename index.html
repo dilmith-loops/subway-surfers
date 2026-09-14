@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <title>Subway Surfers - Real Train Station & Camera Motion Edition</title>
+  <meta name="description" content="Official Subway Surfers 3D New York train station with AI webcam motion tracking and fill-in-the-blanks Word Hunt.">
+  <link rel="icon" href="./NewYorkIcon.png">
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    /* Real Subway Surfers Fullscreen Game Holder */
+    #og-game-holder {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #000000;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 1;
+    }
+
+    /* Keep HUD & Camera PIP floating on top of official 3D canvas */
+    #game-hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 50;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px 24px;
+    }
+
+    .quick-controls, .word-hunt-container, .camera-pip-widget {
+      pointer-events: auto !important;
+    }
+  </style>
+
+  <!-- Google MediaPipe Face Detection AI for Zero-Lag Motion Tracking -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
+
+  <!-- Official Subway Surfers Adapter -->
+  <script src="js/games_lib/ludiAdapter.js" charset="utf-8"></script>
+</head>
+<body>
+
+  <!-- The Real Subway Surfers 3D WebGL Game Canvas Holder -->
+  <div id="og-game-holder"></div>
+
+  <!-- Game HUD Overlay with Word Hunt & Controls -->
+  <div id="game-hud">
+    <!-- Top Bar -->
+    <div class="hud-top-bar">
+      <!-- Quick Control Buttons -->
+      <div class="quick-controls">
+        <button id="btn-sound-toggle" class="icon-btn" title="Toggle Sound">🔊</button>
+        <button id="btn-camera-toggle" class="icon-btn" title="Toggle Camera">📷</button>
+        <button id="btn-speed-toggle" class="icon-btn" title="Toggle Game Speed" style="font-size: 13px; font-weight: 800; width: auto; padding: 0 12px; color: #ffea00;">🐢 Slow</button>
+        <button id="btn-quick-calibrate" class="icon-btn" title="Calibrate Center (or press C)" style="font-size: 14px; font-weight: 800; width: auto; padding: 0 12px;">🎯 Center [C]</button>
+      </div>
+
+      <!-- Word Hunt "Fill in the Blanks" Banner -->
+      <div id="word-hunt-container" class="word-hunt-container">
+        <div class="word-hunt-header">
+          <span class="word-hunt-title">WORD HUNT</span>
+          <span class="word-hunt-badge">DAILY EVENT</span>
+        </div>
+        <!-- Letter Blank Slots -->
+        <div id="word-hunt-slots" class="word-hunt-slots"></div>
+        <div id="word-hunt-status" class="word-hunt-status">Collect letters in the train station!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camera PIP (Picture-In-Picture) Motion Tracker Widget -->
+  <div id="camera-pip-widget" class="camera-pip-widget">
+    <div class="pip-header">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span class="pip-live-dot"></span>
+        <span>AI CAM TRACKER</span>
+      </div>
+      <span id="pip-status-tag" style="font-size: 8px; opacity: 0.8;">ACTIVE</span>
+    </div>
+
+    <div class="pip-viewport">
+      <video id="webcam-video" playsinline autoplay muted></video>
+      <canvas id="webcam-canvas"></canvas>
+      <div id="pip-gesture-badge" class="pip-gesture-badge">🟢 CENTER</div>
+    </div>
+
+    <div class="pip-controls">
+      <button id="btn-pip-calibrate" class="pip-btn" title="Set Current Position as Center">🎯 Center (C)</button>
+      <button id="btn-pip-mode" class="pip-btn" title="Switch Sensitivity">⚡ Normal</button>
+    </div>
+  </div>
+
+  <!-- Audio & Tracking Modules -->
+  <script src="js/audio.js"></script>
+  <script src="js/word-hunt.js"></script>
+  <script src="js/camera-tracker.js"></script>
+
+  <!-- Official Subway Surfers Game Engine Bootstrapper -->
+  <script src="js/boot.js"></script>
+
+  <script>
+    // --- Master Integration Controller ---
+    window.addEventListener("DOMContentLoaded", () => {
+      // 1. Configure Default Relaxed Speed for Comfortable Motion Play
+      window.SUBWAY_CUSTOM_SPEED = 1.35; // 🐢 Relaxed Slow (default is 2.4 - 4.0)
+
+      // 2. Initialize Word Hunt
+      window.wordHunt.init("word-hunt-slots", "word-hunt-status");
+
+      // 3. UI Controls Setup
+      const btnSoundToggle = document.getElementById("btn-sound-toggle");
+      const btnCameraToggle = document.getElementById("btn-camera-toggle");
+      const btnSpeedToggle = document.getElementById("btn-speed-toggle");
+      const btnQuickCalibrate = document.getElementById("btn-quick-calibrate");
+      const btnPipCalibrate = document.getElementById("btn-pip-calibrate");
+      const btnPipMode = document.getElementById("btn-pip-mode");
+
+      const pipWidget = document.getElementById("camera-pip-widget");
+      const pipBadge = document.getElementById("pip-gesture-badge");
+      const pipStatusTag = document.getElementById("pip-status-tag");
+
+      // Dispatch Key Helper for Subway Surfers
+      function sendGameKey(key, keyCode) {
+        const target = window;
+        target.dispatchEvent(new KeyboardEvent("keydown", { key, keyCode, which: keyCode, bubbles: true }));
+        setTimeout(() => {
+          target.dispatchEvent(new KeyboardEvent("keyup", { key, keyCode, which: keyCode, bubbles: true }));
+        }, 80);
+      }
+
+      // Connect AI Camera Tracker to Real Subway Surfers Controls
+      window.cameraTracker.onLaneChange = (lane) => {
+        if (lane === -1) {
+          if (window.subwayController) window.subwayController.pressLeft();
+          sendGameKey("ArrowLeft", 37);
+        } else if (lane === 1) {
+          if (window.subwayController) window.subwayController.pressRight();
+          sendGameKey("ArrowRight", 39);
+        }
+      };
+
+      window.cameraTracker.onJump = () => {
+        if (window.subwayController) window.subwayController.pressUp();
+        sendGameKey("ArrowUp", 38);
+      };
+
+      window.cameraTracker.onDuck = () => {
+        if (window.subwayController) window.subwayController.pressDown();
+        sendGameKey("ArrowDown", 40);
+      };
+
+      // Camera Tracker status update listener
+      window.cameraTracker.onStatusUpdate = (status) => {
+        if (pipBadge) {
+          pipBadge.textContent = status.action;
+          if (status.action.includes("JUMP")) {
+            pipBadge.style.borderColor = "#ffea00";
+            pipBadge.style.color = "#ffea00";
+          } else if (status.action.includes("DUCK") || status.action.includes("SLIDE")) {
+            pipBadge.style.borderColor = "#ff007f";
+            pipBadge.style.color = "#ff007f";
+          } else if (status.action.includes("LEFT") || status.action.includes("RIGHT")) {
+            pipBadge.style.borderColor = "#00ffcc";
+            pipBadge.style.color = "#00ffcc";
+          } else {
+            pipBadge.style.borderColor = "rgba(255,255,255,0.4)";
+            pipBadge.style.color = "#ffffff";
+          }
+        }
+      };
+
+      // Auto-start webcam tracking
+      async function startCamera() {
+        if (!window.cameraTracker.isActive) {
+          pipStatusTag.textContent = "AI STARTING...";
+          const ok = await window.cameraTracker.init("webcam-video", "webcam-canvas");
+          if (ok) {
+            pipStatusTag.textContent = "AI READY";
+            pipStatusTag.style.color = "#00ffcc";
+          } else {
+            pipStatusTag.textContent = "KEYBOARD";
+            pipStatusTag.style.color = "#ffaa00";
+          }
+        }
+      }
+      startCamera();
+
+      // Calibrate center buttons
+      function triggerCalibration() {
+        if (window.cameraTracker) {
+          window.cameraTracker.calibrateNow();
+        }
+      }
+      btnPipCalibrate.addEventListener("click", triggerCalibration);
+      if (btnQuickCalibrate) btnQuickCalibrate.addEventListener("click", triggerCalibration);
+
+      // Sensitivity preset cycle
+      const presets = ["normal", "high", "low"];
+      let sensIndex = 0;
+      btnPipMode.addEventListener("click", () => {
+        sensIndex = (sensIndex + 1) % presets.length;
+        const current = presets[sensIndex];
+        window.cameraTracker.setSensitivity(current);
+        btnPipMode.textContent = `⚡ ${current.charAt(0).toUpperCase() + current.slice(1)}`;
+      });
+
+      // Speed options cycle
+      const speedOptions = [
+        { id: "relaxed", speed: 1.35, label: "🐢 Slow" },
+        { id: "normal", speed: 2.1, label: "🏃 Mid" },
+        { id: "fast", speed: 3.2, label: "⚡ Fast" }
+      ];
+      let speedOptionIdx = 0;
+
+      btnSpeedToggle.addEventListener("click", () => {
+        speedOptionIdx = (speedOptionIdx + 1) % speedOptions.length;
+        const opt = speedOptions[speedOptionIdx];
+        window.SUBWAY_CUSTOM_SPEED = opt.speed;
+        btnSpeedToggle.textContent = opt.label;
+      });
+
+      // Camera toggle button
+      btnCameraToggle.addEventListener("click", () => {
+        if (pipWidget.style.display === "none") {
+          pipWidget.style.display = "block";
+          startCamera();
+        } else {
+          pipWidget.style.display = "none";
+        }
+      });
+
+      // Sound toggle
+      btnSoundToggle.addEventListener("click", () => {
+        if (window.soundEngine) {
+          const isMuted = window.soundEngine.toggleMute();
+          btnSoundToggle.textContent = isMuted ? "🔇" : "🔊";
+        }
+      });
+
+      // Coin collect integration: Every 4 coins collected in the real train station fills a Word Hunt letter!
+      let coinsCount = 0;
+      window.onSubwayCoinCollect = () => {
+        coinsCount++;
+        if (coinsCount % 3 === 0 && window.wordHunt) {
+          const letter = window.wordHunt.getNextSpawnLetter();
+          window.wordHunt.collectLetter(letter);
+        }
+      };
+
+      // Periodic Word Hunt letter discovery during run
+      setInterval(() => {
+        if (window.subwayController && window.wordHunt) {
+          const letter = window.wordHunt.getNextSpawnLetter();
+          window.wordHunt.collectLetter(letter);
+        }
+      }, 14000);
+    });
+  </script>
+</body>
+</html>
