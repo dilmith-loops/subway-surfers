@@ -11,3 +11,6 @@ real_subway/
 # Logs
 *.log
 npm-debug.log*
+
+# Deploy packages
+*.zip

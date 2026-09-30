@@ -1,0 +1,50 @@
+# Subway Surfers - Colombo Edition
+# Apache / LiteSpeed Configuration for Hostinger
+
+# Prevent directory indexing
+Options -Indexes
+
+# Ensure trailing slash for subfolder requests
+<IfModule mod_dir.c>
+    DirectorySlash On
+</IfModule>
+
+# MIME Types (Essential for audio, fonts, WebAssembly, and 3D assets)
+<IfModule mod_mime.c>
+    AddType audio/ogg .ogg
+    AddType audio/mpeg .mp3
+    AddType audio/wav .wav
+    AddType font/woff .woff
+    AddType font/woff2 .woff2
+    AddType font/ttf .ttf
+    AddType application/json .json
+    AddType application/wasm .wasm
+    AddType application/octet-stream .fbx .bin
+    AddType image/webp .webp
+    AddType image/svg+xml .svg
+</IfModule>
+
+# Enable CORS for assets
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, OPTIONS"
+    Header set Access-Control-Allow-Headers "*"
+</IfModule>
+
+# Enable Browser Caching for Fast Loading
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType audio/ogg "access plus 1 month"
+    ExpiresByType audio/mpeg "access plus 1 month"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+</IfModule>
+
+# Enable Gzip / Deflate Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css application/json application/javascript
+</IfModule>

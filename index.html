@@ -7,6 +7,11 @@
   <meta name="description" content="Official Subway Surfers 3D New York train station with AI webcam motion tracking and fill-in-the-blanks Word Hunt.">
   <link rel="icon" href="./NewYorkIcon.png">
   <link rel="stylesheet" href="css/style.css">
+  <script>
+    if (window.location.pathname.endsWith('/subway')) {
+      window.location.replace(window.location.pathname + '/' + window.location.search + window.location.hash);
+    }
+  </script>
 
   <style>
     /* Real Subway Surfers Fullscreen Game Holder */
